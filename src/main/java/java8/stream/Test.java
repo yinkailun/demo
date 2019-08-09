@@ -3,6 +3,7 @@ package java8.stream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -15,10 +16,12 @@ public class Test {
 		List<Integer> list = new ArrayList<>(Arrays.asList(1,2,3,4,5));
 		Stream<String> stream = list.stream().filter(x -> {
 			return x > 2;
-		}).distinct().map( c->{
+		}).sorted((a,b) -> {
+			return b-a;
+		}).map( c->{
 			return c+"@@@";
 		});
-		stream.count();
+		stream.collect(Collectors.toList());
 		System.out.println(stream);
 	}
 
