@@ -199,6 +199,14 @@ Stream 源码解析
             [return helper.wrapAndCopyInto(makeSink(), spliterator).get();]
             //wrapSink(sink)操做，会依次调用distinct->filter的onWrapSink方法，生成最终的包装类
              copyInto(wrapSink(Objects.requireNonNull(sink)), spliterator);
-            ![image.png](https://i.loli.net/2019/08/09/YUWXvN9Moq7fsCu.png) 
+             //执行copyInto方法
    ```
+## eg filter -> sorted() -> map
+1. wrappedSink初始为filter中的
+![image.png](https://i.loli.net/2019/08/09/VyBocdwLuM57QCv.png)
+2. 遍历所欲元素，执行wrapSink的accept方法，即上图的accept方法，不满足条件，继续，满足条件向下执行，downstream为sorted的
+![image.png](https://i.loli.net/2019/08/09/9MkHUicWb3osTdV.png)
+3. 阿萨斯
+![image.png](https://i.loli.net/2019/08/09/987IQdx1aXMjsUe.png)
+![image.png](https://i.loli.net/2019/08/09/YUWXvN9Moq7fsCu.png) 
 阶段2，才会触发数据处理操作,
