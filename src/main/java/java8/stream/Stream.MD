@@ -61,133 +61,7 @@ Stream 源码解析
     static <T> ReferencePipeline<T, T> makeRef(AbstractPipeline<?, T, ?> upstream) {
         return new ReferencePipeline.StatefulOp<T, T>(upstream, StreamShape.REFERENCE,
                                                       StreamOpFlag.IS_DISTINCT | StreamOpFlag.NOT_SIZED) {
-
-            <P_IN> Node<T> reduce(PipelineHelper<T> helper, Spliterator<P_IN> spliterator) {
-                // If the stream is SORTED then it should also be ORDERED so the following will also
-                // preserve the sort order
-                TerminalOp<T, LinkedHashSet<T>> reduceOp
-                        = ReduceOps.<T, LinkedHashSet<T>>makeRef(LinkedHashSet::new, LinkedHashSet::add,
-                                                                 LinkedHashSet::addAll);
-                return Nodes.node(reduceOp.evaluateParallel(helper, spliterator));
-            }
-
-            @Override
-            <P_IN> Node<T> opEvaluateParallel(PipelineHelper<T> helper,
-                                              Spliterator<P_IN> spliterator,
-                                              IntFunction<T[]> generator) {
-                if (StreamOpFlag.DISTINCT.isKnown(helper.getStreamAndOpFlags())) {
-                    // No-op
-                    return helper.evaluate(spliterator, false, generator);
-                }
-                else if (StreamOpFlag.ORDERED.isKnown(helper.getStreamAndOpFlags())) {
-                    return reduce(helper, spliterator);
-                }
-                else {
-                    // Holder of null state since ConcurrentHashMap does not support null values
-                    AtomicBoolean seenNull = new AtomicBoolean(false);
-                    ConcurrentHashMap<T, Boolean> map = new ConcurrentHashMap<>();
-                    TerminalOp<T, Void> forEachOp = ForEachOps.makeRef(t -> {
-                        if (t == null)
-                            seenNull.set(true);
-                        else
-                            map.putIfAbsent(t, Boolean.TRUE);
-                    }, false);
-                    forEachOp.evaluateParallel(helper, spliterator);
-
-                    // If null has been seen then copy the key set into a HashSet that supports null values
-                    // and add null
-                    Set<T> keys = map.keySet();
-                    if (seenNull.get()) {
-                        // TODO Implement a more efficient set-union view, rather than copying
-                        keys = new HashSet<>(keys);
-                        keys.add(null);
-                    }
-                    return Nodes.node(keys);
-                }
-            }
-
-            @Override
-            <P_IN> Spliterator<T> opEvaluateParallelLazy(PipelineHelper<T> helper, Spliterator<P_IN> spliterator) {
-                if (StreamOpFlag.DISTINCT.isKnown(helper.getStreamAndOpFlags())) {
-                    // No-op
-                    return helper.wrapSpliterator(spliterator);
-                }
-                else if (StreamOpFlag.ORDERED.isKnown(helper.getStreamAndOpFlags())) {
-                    // Not lazy, barrier required to preserve order
-                    return reduce(helper, spliterator).spliterator();
-                }
-                else {
-                    // Lazy
-                    return new StreamSpliterators.DistinctSpliterator<>(helper.wrapSpliterator(spliterator));
-                }
-            }
-
-            ** @3**
-            @Override
-            Sink<T> opWrapSink(int flags, Sink<T> sink) {
-                Objects.requireNonNull(sink);
-
-                if (StreamOpFlag.DISTINCT.isKnown(flags)) {
-                    return sink;
-                } else if (StreamOpFlag.SORTED.isKnown(flags)) {
-                    return new Sink.ChainedReference<T, T>(sink) {
-                        boolean seenNull;
-                        T lastSeen;
-
-                        @Override
-                        public void begin(long size) {
-                            seenNull = false;
-                            lastSeen = null;
-                            downstream.begin(-1);
-                        }
-
-                        @Override
-                        public void end() {
-                            seenNull = false;
-                            lastSeen = null;
-                            downstream.end();
-                        }
-
-                        @Override
-                        public void accept(T t) {
-                            if (t == null) {
-                                if (!seenNull) {
-                                    seenNull = true;
-                                    downstream.accept(lastSeen = null);
-                                }
-                            } else if (lastSeen == null || !t.equals(lastSeen)) {
-                                downstream.accept(lastSeen = t);
-                            }
-                        }
-                    };
-                } else {
-                    return new Sink.ChainedReference<T, T>(sink) {
-                        Set<T> seen;
-
-                        @Override
-                        public void begin(long size) {
-                            seen = new HashSet<>();
-                            downstream.begin(-1);
-                        }
-
-                        @Override
-                        public void end() {
-                            seen = null;
-                            downstream.end();
-                        }
-
-                        @Override
-                        public void accept(T t) {
-                            if (!seen.contains(t)) {
-                                seen.add(t);
-                                downstream.accept(t);
-                            }
-                        }
-                    };
-                }
-            }
-        };
-    }
+                                                      .......
     ```
    - collect() 
    ```
@@ -202,11 +76,21 @@ Stream 源码解析
              //执行copyInto方法
    ```
 ## eg filter -> sorted() -> map
+0. 遍历开始位置
+![image.png](https://i.loli.net/2019/08/09/lhcHC15I8qUExWR.png)
 1. wrappedSink初始为filter中的
 ![image.png](https://i.loli.net/2019/08/09/VyBocdwLuM57QCv.png)
-2. 遍历所欲元素，执行wrapSink的accept方法，即上图的accept方法，不满足条件，继续，满足条件向下执行，downstream为sorted的
+2. 遍历所欲元素，执行wrapSink的accept方法，即上图的accept方法，不满足条件，继续，满足条件向下执行accept方法，downstream为sorted的
 ![image.png](https://i.loli.net/2019/08/09/9MkHUicWb3osTdV.png)
-3. 阿萨斯
-![image.png](https://i.loli.net/2019/08/09/987IQdx1aXMjsUe.png)
-![image.png](https://i.loli.net/2019/08/09/YUWXvN9Moq7fsCu.png) 
+sorted 的accept方法其实是将上层数据存储到list中
+![image.png](https://i.loli.net/2019/08/09/DbNA5fElm1G3JP4.png)
+3. 遍历结束后，filter执行end,会调用sorted的end,其实就是对list的排序操作，然后启动downstream.遍历list数据，执行downstream的accept方法,此时downstream为map
+![image.png](https://i.loli.net/2019/08/09/YwCfj8n5JVcuMpE.png)
+![image.png](https://i.loli.net/2019/08/09/yKoIVGpHvJSAlsR.png)
+4. map的accept操作,处理参数，继续向下传播此时downstream为collector
+![image.png](https://i.loli.net/2019/08/09/DpmBtoslfHUzO6K.png)
+![image.png](https://i.loli.net/2019/08/09/l4dor7xufDqyLhA.png)
+5. 最后一步accumulator.accept(state,t),存储数据，accumulator是自己定义的搜集器eg.Collectors.toList()，可以看出，先new一个list,然后执行add操作。
+![image.png](https://i.loli.net/2019/08/09/8glhveDm716itLX.png)
+
 阶段2，才会触发数据处理操作,
