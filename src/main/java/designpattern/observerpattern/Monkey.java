@@ -9,10 +9,10 @@ import java.util.Observable;
  */
 public class Monkey extends Observable {
 
-	public void action(String action){
-		System.out.println("猴子执行动作："+action);
-		//必须设置更改才会触发
-		setChanged();
-		notifyObservers(action);
-	}
+    public void action(String action) {
+        System.out.println("猴子执行动作：" + action);
+        //必须设置更改才会触发
+        setChanged();
+        notifyObservers(action);
+    }
 }

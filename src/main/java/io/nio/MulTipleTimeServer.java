@@ -13,46 +13,47 @@ import java.util.Set;
  * @description:
  * @date 2019-06-28 5:05 PM
  */
-public class MulTipleTimeServer implements Runnable{
+public class MulTipleTimeServer implements Runnable {
 
-	private Selector selector;
+    private Selector selector;
 
-	private ServerSocketChannel serverSocketChannel;
+    private ServerSocketChannel serverSocketChannel;
 
-	private volatile boolean stop;
-	public MulTipleTimeServer(int port) {
-		try {
-			selector = Selector.open();
-			serverSocketChannel = ServerSocketChannel.open();
-			serverSocketChannel.configureBlocking(false);
-			serverSocketChannel.socket().bind(new InetSocketAddress(port),1024);
-			serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-			System.out.println("start on port :" + port);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
+    private volatile boolean stop;
 
-	public void stop(){
-		stop = true;
-	}
+    public MulTipleTimeServer(int port) {
+        try {
+            selector = Selector.open();
+            serverSocketChannel = ServerSocketChannel.open();
+            serverSocketChannel.configureBlocking(false);
+            serverSocketChannel.socket().bind(new InetSocketAddress(port), 1024);
+            serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+            System.out.println("start on port :" + port);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-	@Override
-	public void run() {
+    public void stop() {
+        stop = true;
+    }
 
-		while (!stop){
-			try{
-				selector.select(1000);
-				Set<SelectionKey> selectionKeys = selector.selectedKeys();
-				Iterator<SelectionKey> iterator = selectionKeys.iterator();
-				SelectionKey selectionKey = null;
-				if(iterator.hasNext()){
-					selectionKey = iterator.next();
+    @Override
+    public void run() {
 
-				}
-			}catch (Exception e){
-				e.printStackTrace();
-			}
-		}
-	}
+        while (!stop) {
+            try {
+                selector.select(1000);
+                Set<SelectionKey> selectionKeys = selector.selectedKeys();
+                Iterator<SelectionKey> iterator = selectionKeys.iterator();
+                SelectionKey selectionKey = null;
+                if (iterator.hasNext()) {
+                    selectionKey = iterator.next();
+
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }

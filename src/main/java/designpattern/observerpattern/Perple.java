@@ -14,11 +14,11 @@ import java.util.Observer;
 @Data
 @AllArgsConstructor
 public class Perple implements Observer {
-	private String name;
+    private String name;
 
-	@Override
-	public void update(Observable o, Object arg) {
-		System.out.println(this.name+"观察到了:"+arg);
-	}
+    @Override
+    public void update(Observable o, Object arg) {
+        System.out.println(this.name + "观察到了:" + arg);
+    }
 
 }

@@ -8,48 +8,49 @@ import java.util.concurrent.BlockingQueue;
  * @description:
  * @date 2019-07-18 3:40 PM
  */
-public class Demo{
+public class Demo {
 
-	private static BlockingQueue<String> queue = new ArrayBlockingQueue(10);
-	static class Producer{
-		public void addQueue(String msg){
-			try {
-				System.out.println("send msg:"+msg);
-				queue.put(msg);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-	}
+    private static BlockingQueue<String> queue = new ArrayBlockingQueue(10);
 
-	static class Consumer implements Runnable {
+    static class Producer {
+        public void addQueue(String msg) {
+            try {
+                System.out.println("send msg:" + msg);
+                queue.put(msg);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
-		@Override
-		public void run() {
-			try{
-				String msg ;
-				System.out.println("consumer start.");
-				while ((msg = queue.take()) != null){
+    static class Consumer implements Runnable {
 
-					try {
-						Thread.sleep(100);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-					System.out.println("consume:"+msg);
-				}
-			}catch (Exception e){
-				e.printStackTrace();
-			}
-		}
-	}
+        @Override
+        public void run() {
+            try {
+                String msg;
+                System.out.println("consumer start.");
+                while ((msg = queue.take()) != null) {
 
-	public static void main(String[] args) {
-		Producer producer = new Producer();
-		new Thread(new Consumer()).start();
-		for(int i =0;i<1000;i++){
-			producer.addQueue(String.valueOf(i));
-		}
-	}
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println("consume:" + msg);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        Producer producer = new Producer();
+        new Thread(new Consumer()).start();
+        for (int i = 0; i < 1000; i++) {
+            producer.addQueue(String.valueOf(i));
+        }
+    }
 }
 

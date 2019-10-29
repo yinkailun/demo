@@ -6,8 +6,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class DemoSpringDubboApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(DemoSpringDubboApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(DemoSpringDubboApplication.class, args);
+    }
 
 }

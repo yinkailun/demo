@@ -15,8 +15,7 @@ import java.util.List;
 
 public class AclDemo {
 
-    private static String CONNECTION_STR="192.168.13.102:2181,192.168.13.103:2181,192.168.13.104:2181";
-
+    private static String CONNECTION_STR = "192.168.13.102:2181,192.168.13.103:2181,192.168.13.104:2181";
 
 
     public static void main(String[] args) throws Exception {
@@ -28,11 +27,11 @@ public class AclDemo {
 
         CuratorFramework curatorFramework = CuratorFrameworkFactory.builder().
                 connectString(CONNECTION_STR).sessionTimeoutMs(5000).
-                authorization("digest","admin:admin".getBytes()).
+                authorization("digest", "admin:admin".getBytes()).
                 retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
         curatorFramework.start();
-        List<ACL> list=new ArrayList<>();
-        ACL acl=new ACL(ZooDefs.Perms.READ | ZooDefs.Perms.WRITE,
+        List<ACL> list = new ArrayList<>();
+        ACL acl = new ACL(ZooDefs.Perms.READ | ZooDefs.Perms.WRITE,
                 new Id("digest", DigestAuthenticationProvider.generateDigest("admin:admin")));
         list.add(acl);
         curatorFramework.setACL().withACL(ZooDefs.Ids.CREATOR_ALL_ACL).forPath("/temp");

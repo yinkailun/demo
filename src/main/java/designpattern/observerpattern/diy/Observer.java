@@ -6,5 +6,5 @@ package designpattern.observerpattern.diy;
  * @date 2019-07-31 4:59 PM
  */
 public interface Observer {
-	void update(Event event);
+    void update(Event event);
 }

@@ -94,3 +94,6 @@ sorted 的accept方法其实是将上层数据存储到list中
 ![image.png](https://i.loli.net/2019/08/09/8glhveDm716itLX.png)
 
 阶段2，才会触发数据处理操作,
+---
+ 以上都是基于串行操作实现的，若要用并行实现则需要使用parallelStream()
+* 并行实现是基于Fork/Join框架实现，具体原理后续研究(没看太懂ForkJoinPool...)
